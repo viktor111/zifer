@@ -1,9 +1,17 @@
 use std::{
     error::Error,
-    net::{IpAddr, Ipv4Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr}, path::Path,
 };
 
 use tokio::{net::{TcpListener, TcpStream}};
+
+pub fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
+    if !path.is_dir() {
+        return Err("[-] Not a directory".into());
+    }
+
+    Ok(())
+}
 
 pub async fn create_stream(addr: SocketAddr) -> Result<TcpStream, Box<dyn Error>> {
     let stream = TcpStream::connect(addr).await;
