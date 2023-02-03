@@ -3,8 +3,16 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
 };
 
-use tokio::net::{TcpListener, TcpStream};
+use tokio::{net::{TcpListener, TcpStream}};
 
+pub async fn create_stream(addr: SocketAddr) -> Result<TcpStream, Box<dyn Error>> {
+    let stream = TcpStream::connect(addr).await;
+
+    match stream {
+        Ok(stream) => Ok(stream),
+        Err(e) => Err(e.into()),
+    }
+}
 
 pub async fn create_listener(addr: SocketAddr) -> Result<TcpListener, Box<dyn Error>> {
     let listener = TcpListener::bind(addr).await;
