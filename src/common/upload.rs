@@ -9,11 +9,11 @@ use std::error::Error;
 
 pub async fn create_reader(file_path: &Path) -> Result<BufReader<File>, Box<dyn Error>> {
     if !file_path.exists() {
-        return Err("File does not exist".into());
+        return Err("[-] File does not exist".into());
     }
 
     if !file_path.is_file() {
-        return Err("Path is not a file".into());
+        return Err("[-] Path is not a file".into());
     }
 
     let file = File::open(file_path)?;

@@ -1,6 +1,7 @@
 use std::{error::Error, fs::File, io::Write};
 
 use tokio::{net::TcpStream, io::AsyncReadExt};
+use tracing::info;
 
 pub async fn read_file_name(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
     let mut file_name_len_bytes = [0; 4];
@@ -27,6 +28,7 @@ pub async fn read_chunk(stream: &mut TcpStream) -> Result<Option<Vec<u8>>, Box<d
     let chunk_len = u32::from_be_bytes(chunk_len_bytes);
 
     if chunk_len == 0 {
+        info!("[+] File read to the end");
         return Ok(None)
     }
 

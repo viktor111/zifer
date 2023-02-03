@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::error::Error;
 
+use tracing::info;
+
 use crate::common::upload;
 
 pub async fn init_client(ip: &str, file_path: &str) -> Result<(), Box<dyn Error>> {
@@ -10,7 +12,11 @@ pub async fn init_client(ip: &str, file_path: &str) -> Result<(), Box<dyn Error>
 
     let mut stream = upload::create_listener(ip).await?;
 
+    info!("[+] Connection established");
+
     upload::write_file_name(&mut stream, &file_path).await;
+
+    info!("[+] File name sent to server starting file transfer");
 
     loop {
         let (chunk, read_bytes) = upload::read_chunk_from_file(&mut reader).await?;

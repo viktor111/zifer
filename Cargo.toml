@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.21.2", features = ["full", "time"] }
 clap = { version = "4.1.4", features = ["derive"] }
+tracing = "0.1.37"

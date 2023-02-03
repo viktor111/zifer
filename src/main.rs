@@ -1,4 +1,5 @@
 use clap::Parser;
+use tracing::info;
 
 mod server;
 mod client;
@@ -22,11 +23,11 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     if args.server != ""  {
-        println!("Server running in {} directory...", args.server);
+        info!("[.] Server starting....");
         server::init::init_server("127.0.0.1:7677", &args.server).await.unwrap();
     } 
     else if args.client != "" {
-        println!("Client running connecting to {} ....", args.client);
+        info!("Client connecting to {}....", args.client);
         client::init::init_client("127.0.0.1:7677", &args.file).await.unwrap();
     }
 }
