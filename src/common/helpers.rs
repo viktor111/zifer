@@ -1,9 +1,18 @@
 use std::{
     error::Error,
-    net::{IpAddr, Ipv4Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr}, path::Path,
 };
 
-use tokio::{net::{TcpListener, TcpStream}};
+
+use tokio::{net::{TcpListener, TcpStream}, io::{AsyncWriteExt, AsyncReadExt}};
+
+pub fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
+    if !path.is_dir() {
+        return Err("[-] Not a directory".into());
+    }
+
+    Ok(())
+}
 
 pub async fn create_stream(addr: SocketAddr) -> Result<TcpStream, Box<dyn Error>> {
     let stream = TcpStream::connect(addr).await;
@@ -32,6 +41,27 @@ pub async fn listener_accept_conn(
         Ok((stream, addr)) => Ok((stream, addr)),
         Err(e) => Err(e.into()),
     }
+}
+
+pub async fn write_message(stream: &mut TcpStream, message: &str) -> Result<(), Box<dyn Error>> {
+    let len = message.len() as u32;
+    let len_bytes = len.to_be_bytes();
+    stream.write_all(&len_bytes).await?;
+
+    stream.write_all(message.as_bytes()).await?;
+    Ok(())
+}
+
+pub async fn read_message(stream: &mut TcpStream) -> Result<String, Box<dyn Error>>{
+    let mut message_len_bytes = [0; 4];
+    stream.read_exact(&mut message_len_bytes).await.unwrap();
+    let message_len = u32::from_be_bytes(message_len_bytes);
+
+    let mut message_bytes = vec![0; message_len as usize];
+    stream.read_exact(&mut message_bytes).await.unwrap();
+    let message = String::from_utf8_lossy(&message_bytes);
+
+    Ok(message.to_string())
 }
 
 pub fn socket_address_from_string_ip(ip: String) -> Result<SocketAddr, Box<dyn Error>> {

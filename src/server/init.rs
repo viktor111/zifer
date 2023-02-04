@@ -1,87 +1,102 @@
-use std::{error::Error, fs::File, path::Path, io::Write};
+use std::fs::File;
+use std::io::BufReader;
+use std::{error::Error, path::Path};
 
-use tokio::{io::AsyncReadExt, net::TcpStream};
+use tokio::net::TcpStream;
+use tracing::{error, info};
 
 use crate::common::helpers;
+use crate::common::{download, upload};
 
 pub async fn init_server(ip: &str, dir: &str) -> Result<(), Box<dyn Error>> {
     let path = Path::new(dir);
 
-    validate_path(path)?;
+    helpers::validate_path(path)?;
 
-    let socket_addr = helpers::socket_address_from_string_ip(ip.to_string()).expect("Invalid IP address");
+    let socket_addr =
+        helpers::socket_address_from_string_ip(ip.to_string()).expect("Invalid IP address");
+
     let listener = helpers::create_listener(socket_addr).await.unwrap();
-    
-    
-    loop{
+    info!("Server started on port 7677");
+
+    loop {
         let (stream, _) = helpers::listener_accept_conn(&listener).await.unwrap();
-        
-        handle_connection(stream, dir).await;
+        info!("New connection established");
+        handle_connection(stream).await;
     }
 }
 
-async fn handle_connection(mut stream: TcpStream, dir: &str) {
+async fn handle_connection(mut stream: TcpStream) {
     tokio::spawn(async move {
-        loop {
-            let file_name = read_file_name(&mut stream).await.unwrap();
+        let command = helpers::read_message(&mut stream).await.unwrap();
 
-            let mut file = create_file(&file_name).unwrap();
+        if command == "upload" {
+            let file_name = download::read_file_name(&mut stream).await.unwrap();
+            info!("Recieved file name {}", file_name);
 
-            loop{
-                let chunk = read_chunk(&mut stream).await.unwrap();
+            let mut file = download::create_file(&file_name).unwrap();
+            info!("Starting to read file...");
 
-                match chunk {
-                    Some(chunk) => write_chunk_to_file(&mut file, &chunk).await,
-                    None => return,
+            loop {
+                let upload = client_is_uploading(&mut stream, &mut file).await.unwrap();
+                if upload.is_none() {
+                    return;
+                }
+            }
+        } else if command == "download" {
+            let file_name = helpers::read_message(&mut stream).await.unwrap();
+
+            let file_path = Path::new(&file_name);
+
+            if !file_path.is_file() {
+                error!("File does not exist");
+                helpers::write_message(&mut stream, "error").await.unwrap();
+                return;
+            }
+
+            helpers::write_message(&mut stream, "ok").await.unwrap();
+
+            let mut reader = upload::create_reader(file_path).await.unwrap();
+
+            loop {
+                let download = client_is_downloading(&mut stream, &mut reader)
+                    .await
+                    .unwrap();
+                if download.is_none() {
+                    return;
                 }
             }
         }
     });
 }
 
-fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
-    if !path.is_dir() {
-        return Err("[-] Not a directory".into());
+async fn client_is_uploading(
+    stream: &mut TcpStream,
+    file: &mut File,
+) -> Result<Option<bool>, Box<dyn Error>> {
+    loop {
+        let chunk = download::read_chunk(stream).await.unwrap();
+
+        match chunk {
+            Some(chunk) => download::write_chunk_to_file(file, &chunk).await,
+            None => return Ok(None),
+        }
     }
-
-    Ok(())
 }
 
+async fn client_is_downloading(
+    stream: &mut TcpStream,
+    reader: &mut BufReader<File>,
+) -> Result<Option<bool>, Box<dyn Error>> {
+    loop {
+        let (chunk, read_bytes) = upload::read_chunk_from_file(reader).await?;
 
-async fn read_file_name(stream: &mut TcpStream) -> Result<String, Box<dyn Error>> {
-    let mut file_name_len_bytes = [0; 4];
-    stream.read_exact(&mut file_name_len_bytes).await.unwrap();
+        if read_bytes == 0 {
+            upload::write_eof(stream).await?;
 
-    let file_name_len: u32 = u32::from_be_bytes(file_name_len_bytes);
+            return Ok(None);
+        }
 
-    let mut file_name_bytes = vec![0; file_name_len as usize];
-    stream.read_exact(&mut file_name_bytes).await.unwrap();
-
-    let file_name = String::from_utf8(file_name_bytes.to_vec()).unwrap();
-
-    Ok(file_name)
-}
-
-fn create_file(file_name: &str) -> Result<File, Box<dyn Error>> {
-    let file = std::fs::File::create(&file_name).unwrap();
-    Ok(file)
-}
-
-async fn read_chunk(stream: &mut TcpStream) -> Result<Option<Vec<u8>>, Box<dyn Error>> {
-    let mut chunk_len_bytes = [0; 4];
-    stream.read_exact(&mut chunk_len_bytes).await.unwrap();
-    let chunk_len = u32::from_be_bytes(chunk_len_bytes);
-
-    if chunk_len == 0 {
-        return Ok(None)
+        upload::write_chunk(stream, read_bytes, &chunk).await?;
     }
-
-    let mut frame_data = vec![0; chunk_len as usize];
-    stream.read_exact(&mut frame_data).await.unwrap();
-
-    Ok(Some(frame_data))
-}
-
-async fn write_chunk_to_file(file: &mut File, chunk: &Vec<u8>){
-    file.write_all(chunk).unwrap();
 }
