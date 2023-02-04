@@ -17,7 +17,7 @@ pub async fn init_client_upload(ip: &str, file_path: &str) -> Result<(), Box<dyn
    
     helpers::write_message(&mut stream, "upload").await?;
 
-    upload::write_file_name(&mut stream, &file_path).await;
+    upload::write_file_name(&mut stream, &file_path).await.unwrap();
 
     info!("[+] File name sent to server starting file transfer");
 
@@ -25,12 +25,12 @@ pub async fn init_client_upload(ip: &str, file_path: &str) -> Result<(), Box<dyn
         let (chunk, read_bytes) = upload::read_chunk_from_file(&mut reader).await?;
 
         if read_bytes == 0 {
-            upload::write_eof(&mut stream).await;
+            upload::write_eof(&mut stream).await.unwrap();
 
             return Ok(());
         }
 
-        upload::write_chunk(&mut stream, read_bytes, &chunk).await;
+        upload::write_chunk(&mut stream, read_bytes, &chunk).await.unwrap();
     }
 }
 

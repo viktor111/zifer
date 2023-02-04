@@ -29,7 +29,6 @@ pub async fn init_server(ip: &str, dir: &str) -> Result<(), Box<dyn Error>> {
 async fn handle_connection(mut stream: TcpStream) {
     tokio::spawn(async move {
         let command = helpers::read_message(&mut stream).await.unwrap();
-        info!("Recieved command for {}", command);
 
         if command == "upload" {
             let file_name = download::read_file_name(&mut stream).await.unwrap();
@@ -93,11 +92,11 @@ async fn client_is_downloading(
         let (chunk, read_bytes) = upload::read_chunk_from_file(reader).await?;
 
         if read_bytes == 0 {
-            upload::write_eof(stream).await;
+            upload::write_eof(stream).await?;
 
             return Ok(None);
         }
 
-        upload::write_chunk(stream, read_bytes, &chunk).await;
+        upload::write_chunk(stream, read_bytes, &chunk).await?;
     }
 }
