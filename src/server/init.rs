@@ -22,11 +22,11 @@ pub async fn init_server(ip: &str, dir: &str) -> Result<(), Box<dyn Error>> {
     loop {
         let (stream, _) = helpers::listener_accept_conn(&listener).await.unwrap();
         info!("New connection established");
-        handle_connection(stream, dir).await;
+        handle_connection(stream).await;
     }
 }
 
-async fn handle_connection(mut stream: TcpStream, dir: &str) {
+async fn handle_connection(mut stream: TcpStream) {
     tokio::spawn(async move {
         let command = helpers::read_message(&mut stream).await.unwrap();
         info!("Recieved command for {}", command);
