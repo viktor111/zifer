@@ -24,8 +24,7 @@ pub async fn create_reader(file_path: &Path) -> Result<BufReader<File>, Box<dyn 
 }
 
 pub async fn create_listener(ip: &str) -> Result<TcpStream, Box<dyn Error>> {
-    let addr = socket_address_from_string_ip(ip.to_string())?;
-    let listener = create_stream(addr).await?;
+    let listener = create_stream(ip).await?;
 
     Ok(listener)
 }
