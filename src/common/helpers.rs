@@ -4,7 +4,7 @@ use std::{
 };
 use tracing::{error};
 
-use tokio::{net::{TcpListener, TcpStream}, io::AsyncWriteExt};
+use tokio::{net::{TcpListener, TcpStream}, io::{AsyncWriteExt, AsyncReadExt}};
 
 pub fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
     if !path.is_dir() {
@@ -50,6 +50,18 @@ pub async fn write_message(stream: &mut TcpStream, message: &str) -> Result<(), 
 
     stream.write_all(message.as_bytes()).await?;
     Ok(())
+}
+
+pub async fn recieve_command(stream: &mut TcpStream) -> Result<String, Box<dyn Error>>{
+    let mut command_len_bytes = [0; 4];
+    stream.read_exact(&mut command_len_bytes).await.unwrap();
+    let command_len = u32::from_be_bytes(command_len_bytes);
+
+    let mut command = vec![0; command_len as usize];
+    stream.read_exact(&mut command).await.unwrap();
+    let command = String::from_utf8_lossy(&command);
+
+    Ok(command.to_string())
 }
 
 pub fn socket_address_from_string_ip(ip: String) -> Result<SocketAddr, Box<dyn Error>> {
