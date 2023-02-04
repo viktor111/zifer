@@ -50,7 +50,11 @@ async fn main() {
                 .unwrap();
         }
         else if args.download {
-            // TODO: call init_client_download
+            info!("Client connecting to {}.... for download", args.client);
+            let ip = format!("{}:7677", args.client);
+            client::init::init_client_download(&ip, &args.file)
+                .await
+                .unwrap();
         }
         else{
             error!("Need to specify --upload/-u or --download/-d")

@@ -52,16 +52,16 @@ pub async fn write_message(stream: &mut TcpStream, message: &str) -> Result<(), 
     Ok(())
 }
 
-pub async fn recieve_command(stream: &mut TcpStream) -> Result<String, Box<dyn Error>>{
-    let mut command_len_bytes = [0; 4];
-    stream.read_exact(&mut command_len_bytes).await.unwrap();
-    let command_len = u32::from_be_bytes(command_len_bytes);
+pub async fn read_message(stream: &mut TcpStream) -> Result<String, Box<dyn Error>>{
+    let mut message_len_bytes = [0; 4];
+    stream.read_exact(&mut message_len_bytes).await.unwrap();
+    let message_len = u32::from_be_bytes(message_len_bytes);
 
-    let mut command = vec![0; command_len as usize];
-    stream.read_exact(&mut command).await.unwrap();
-    let command = String::from_utf8_lossy(&command);
+    let mut message_bytes = vec![0; message_len as usize];
+    stream.read_exact(&mut message_bytes).await.unwrap();
+    let message = String::from_utf8_lossy(&message_bytes);
 
-    Ok(command.to_string())
+    Ok(message.to_string())
 }
 
 pub fn socket_address_from_string_ip(ip: String) -> Result<SocketAddr, Box<dyn Error>> {
