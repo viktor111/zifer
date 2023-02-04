@@ -12,11 +12,8 @@ pub async fn init_server(ip: &str, dir: &str) -> Result<(), Box<dyn Error>> {
     let path = Path::new(dir);
 
     helpers::validate_path(path)?;
-
-    let socket_addr =
-        helpers::socket_address_from_string_ip(ip.to_string()).expect("Invalid IP address");
-
-    let listener = helpers::create_listener(socket_addr).await.unwrap();
+    
+    let listener = helpers::create_listener(ip).await.unwrap();
     info!("Server started on port 7677");
 
     loop {
