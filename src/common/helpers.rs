@@ -2,8 +2,9 @@ use std::{
     error::Error,
     net::{IpAddr, Ipv4Addr, SocketAddr}, path::Path,
 };
+use tracing::{error};
 
-use tokio::{net::{TcpListener, TcpStream}};
+use tokio::{net::{TcpListener, TcpStream}, io::AsyncWriteExt};
 
 pub fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
     if !path.is_dir() {
@@ -40,6 +41,15 @@ pub async fn listener_accept_conn(
         Ok((stream, addr)) => Ok((stream, addr)),
         Err(e) => Err(e.into()),
     }
+}
+
+pub async fn write_message(stream: &mut TcpStream, message: &str) -> Result<(), Box<dyn Error>> {
+    let len = message.len() as u32;
+    let len_bytes = len.to_be_bytes();
+    stream.write_all(&len_bytes).await?;
+
+    stream.write_all(message.as_bytes()).await?;
+    Ok(())
 }
 
 pub fn socket_address_from_string_ip(ip: String) -> Result<SocketAddr, Box<dyn Error>> {
