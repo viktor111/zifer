@@ -51,6 +51,7 @@ async fn main() {
         if args.upload {
             info!("Client connecting to {}.... for upload", args.client);
             let ip = format!("{}:{}", args.client, args.port);
+            info!("{}", ip);
             client::init::init_client_upload(&ip, &args.file)
                 .await
                 .unwrap();
