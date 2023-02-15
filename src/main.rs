@@ -12,9 +12,6 @@ struct Args {
     server: String,
 
     #[arg(short, long, default_value_t)]
-    port: String,
-
-    #[arg(short, long, default_value_t)]
     client: String,
 
     #[arg(short, long, default_value_t)]
@@ -45,20 +42,16 @@ async fn main() {
             .unwrap();
     } 
     else if args.client != "" {
-        if args.port == ""{
-            error!("Port is required use --port/-p")
-        }
         if args.upload {
-            info!("Client connecting to {}.... for upload", args.client);
-            let ip = format!("{}:{}", args.client, args.port);
-            info!("{}", ip);
+            let ip = format!("{}:{}", args.client, 7677);
+            info!("Client connecting to {}.... for upload", ip);
             client::init::init_client_upload(&ip, &args.file)
                 .await
                 .unwrap();
         }
         else if args.download {
-            info!("Client connecting to {}.... for download", args.client);
-            let ip = format!("{}:{}", args.client, args.port);
+            let ip = format!("{}:{}", args.client, 7677);
+            info!("Client connecting to {}.... for download", ip);
             client::init::init_client_download(&ip, &args.file)
                 .await
                 .unwrap();
