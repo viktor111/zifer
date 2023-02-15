@@ -35,23 +35,23 @@ async fn main() {
 
     let args = Args::parse();
     if args.server != "" {
+        
         info!("Server starting....");
         server::init::init_server("127.0.0.1:7677", &args.server)
             .await
             .unwrap();
     } 
     else if args.client != "" {
-        
         if args.upload {
-            info!("Client connecting to {}.... for upload", args.client);
-            let ip = format!("{}:7677", args.client);
+            let ip = format!("{}:{}", args.client, 7677);
+            info!("Client connecting to {}.... for upload", ip);
             client::init::init_client_upload(&ip, &args.file)
                 .await
                 .unwrap();
         }
         else if args.download {
-            info!("Client connecting to {}.... for download", args.client);
-            let ip = format!("{}:7677", args.client);
+            let ip = format!("{}:{}", args.client, 7677);
+            info!("Client connecting to {}.... for download", ip);
             client::init::init_client_download(&ip, &args.file)
                 .await
                 .unwrap();

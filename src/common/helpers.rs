@@ -14,7 +14,7 @@ pub fn validate_path(path: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub async fn create_stream(addr: SocketAddr) -> Result<TcpStream, Box<dyn Error>> {
+pub async fn create_stream(addr: &str) -> Result<TcpStream, Box<dyn Error>> {
     let stream = TcpStream::connect(addr).await;
 
     match stream {
@@ -23,7 +23,7 @@ pub async fn create_stream(addr: SocketAddr) -> Result<TcpStream, Box<dyn Error>
     }
 }
 
-pub async fn create_listener(addr: SocketAddr) -> Result<TcpListener, Box<dyn Error>> {
+pub async fn create_listener(addr: &str) -> Result<TcpListener, Box<dyn Error>> {
     let listener = TcpListener::bind(addr).await;
 
     match listener {
